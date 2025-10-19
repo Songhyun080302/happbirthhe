@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>정의의 히어로, 생일을 구하러 왔다! — HIAE Episode</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Black+Han+Sans&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#071026;
+      --card:#0f1724cc;
+      --accent-red:#e63946;
+      --accent-green:#52b788;
+      --accent-blue:#457b9d;
+      --accent-purple:#7b2cbf;
+      --accent-yellow:#ffd166;
+      --text:#f8f9fa;
+      --muted:#bfc8d6;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:'Jua', 'Black Han Sans', system-ui, -apple-system, "Noto Sans KR", "Apple SD Gothic Neo", Arial;
+      background: radial-gradient(ellipse at top, #071026 0%, #071026 40%, #041226 100%);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      overflow:hidden;
+    }
+
+    /* Stars */
+    .sky{
+      position:fixed;
+      inset:0;
+      overflow:hidden;
+      pointer-events:none;
+      z-index:0;
+    }
+    .star{
+      position:absolute;
+      width:2px;height:2px;border-radius:50%;
+      background:#fff;opacity:0.85;filter:blur(.3px);
+      animation:twinkle 6s linear infinite;
+    }
+    @keyframes twinkle{0%{opacity:.2}50%{opacity:1}100%{opacity:.2}}
+
+    /* Meteor */
+    .meteor{
+      position:absolute;
+      width:6px;height:6px;border-radius:50%;
+      box-shadow: 0 0 12px 6px; transform:translateX(-200px) translateY(-200px);
+      opacity:0;
+      pointer-events:none;
+      z-index:4;
+    }
+
+    /* Layout */
+    .container{
+      position:relative;
+      display:grid;
+      grid-template-columns: 1fr 460px;
+      gap:18px;
+      height:100vh;
+      padding:28px;
+      align-items:end;
+      z-index:1;
+    }
+
+    /* Left: big scene */
+    .scene{
+      position:relative;
+      border-radius:14px;
+      padding:28px;
+      min-height:70vh;
+      box-shadow: 0 10px 40px rgba(0,0,0,.6);
+      overflow:hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent 20%);
+    }
+    .scene .stage{
+      position:relative; z-index:2;
+      height:100%;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      text-align:center;
+    }
+
+    .title{
+      font-size:24px; letter-spacing:1px; margin-bottom:6px;
+    }
+    .subtitle{color:var(--muted); margin-bottom:18px}
+
+    .scene .sceneArt{
+      width:88%; max-width:920px; border-radius:12px; padding:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.006));
+      box-shadow: inset 0 -6px 24px rgba(255,255,255,0.01);
+      color:var(--muted);
+    }
+    .scene .sceneArt .bigLine{font-size:18px; margin-bottom:12px; color:var(--text)}
+
+    /* Dialogue card (right column) */
+    .card{
+      background:var(--card); border-radius:12px; padding:20px; height:70vh;
+      display:flex; flex-direction:column; justify-content:space-between;
+      box-shadow: 0 8px 30px rgba(0,0,0,.6);
+    }
+    .dialogueWrap{display:flex; flex-direction:column; gap:12px}
+    .charName{font-weight:800; font-size:18px; color:var(--accent-red)}
+    .textBox{
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      border-radius:10px; padding:14px; min-height:200px; max-height:52vh; overflow:auto;
+      border:1px solid rgba(255,255,255,0.03)
+    }
+    .text{font-size:18px; line-height:1.7; color:var(--text); white-space:pre-wrap}
+
+    .choices{display:flex;flex-direction:column; gap:8px; margin-top:8px}
+    .choiceBtn{
+      background:transparent; border:2px solid rgba(255,255,255,0.04);
+      padding:10px 12px; border-radius:10px; cursor:pointer; color:var(--text);
+      transition:all .16s; font-weight:800; text-align:left;
+    }
+    .choiceBtn:hover{transform:translateY(-3px); box-shadow:0 6px 20px rgba(0,0,0,.4)}
+    .choiceRow{display:flex; gap:8px; flex-wrap:wrap}
+    .choiceBtn[data-color="red"]{border-color:var(--accent-red); color:var(--accent-red)}
+    .choiceBtn[data-color="green"]{border-color:var(--accent-green); color:var(--accent-green)}
+    .choiceBtn[data-color="blue"]{border-color:var(--accent-blue); color:var(--accent-blue)}
+    .choiceBtn[data-color="purple"]{border-color:var(--accent-purple); color:var(--accent-purple)}
+    .choiceBtn[data-color="yellow"]{border-color:var(--accent-yellow); color:var(--accent-yellow)}
+    .small{font-size:13px;color:var(--muted)}
+
+    /* Footer actions */
+    .footer{display:flex; gap:10px; align-items:center; justify-content:space-between}
+    .btn{
+      background:linear-gradient(180deg,#ffffff06,#00000006);
+      border:1px solid rgba(255,255,255,0.06); color:var(--text);
+      padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:700;
+    }
+    .btn.primary{background:linear-gradient(90deg,var(--accent-red),#ff7b7b); color:#fff}
+
+    /* responsive */
+    @media (max-width:980px){
+      .container{grid-template-columns:1fr; padding:12px}
+      .card{height:48vh}
+    }
+
+    /* typing cursor */
+    .cursor{display:inline-block; width:8px; height:18px; background:var(--text);
+      margin-left:6px; vertical-align:middle; animation:blink 1s steps(2) infinite;}
+    @keyframes blink{50%{opacity:0}}
+
+    /* small animations */
+    .fadeIn{animation:fadeIn .45s ease both}
+    @keyframes fadeIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+  </style>
+</head>
+<body>
+  <div class="sky" id="sky"></div>
+
+  <div class="container">
+    <main class="scene">
+      <div class="stage">
+        <div class="title">정의의 히어로, 생일을 구하러 왔다! — HIAE Episode</div>
+        <div class="subtitle">오늘은 희애의 생일. 밤하늘에 유성이 떨어진다… 색을 골라봐.</div>
+
+        <div class="sceneArt">
+          <div class="bigLine" id="sceneText">
+            오늘은 희애의 생일.
+            밤하늘은 유난히 맑고, 별들이 반짝인다.
+            그때——
+            하늘을 가르며 유성이 떨어진다.
+          </div>
+          <div id="sceneNotes" class="small">유성은 5가지 색: 빨강 / 초록 / 파랑 / 보라 / 노랑</div>
+        </div>
+
+        <div style="margin-top:18px; display:flex; gap:12px; align-items:center">
+          <div class="small">루트 방문 기록:</div>
+          <div id="flags" class="small" style="color:var(--muted)">없음</div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="card fadeIn">
+      <div class="dialogueWrap">
+        <div class="charName" id="charName">나레이터</div>
+        <div class="textBox" id="dialogueBox">
+          <div class="text" id="text">오늘은 희애의 생일. 밤하늘은 유난히 맑고, 별들이 반짝인다. 그때— 하늘을 가르며 유성이 떨어진다.</div>
+        </div>
+
+        <div>
+          <div class="small">유성 선택지</div>
+          <div class="choices" id="choiceContainer">
+            <div class="choiceRow">
+              <button class="choiceBtn" data-choice="red" data-color="red">1️⃣ 빨간 유성 — 모리사와 치아키 등장</button>
+              <button class="choiceBtn" data-choice="green" data-color="green">2️⃣ 초록 유성 — 위츄 & 리우</button>
+              <button class="choiceBtn" data-choice="blue" data-color="blue">3️⃣ 파란 유성 — 카게히라 미카</button>
+              <button class="choiceBtn" data-choice="purple" data-color="purple">4️⃣ 보라색 유성 — 아즈키 슈</button>
+              <button class="choiceBtn" data-choice="yellow" data-color="yellow">5️⃣ 노란 유성 — 단향</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="restart">처음으로</button>
+          <button class="btn" id="skip">대사 스킵</button>
+        </div>
+
+        <div style="display:flex;gap:8px; align-items:center">
+          <div class="small">비고</div>
+          <div class="small" style="color:var(--muted)">이미지 없음 · 대사 느리게 표시됨</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    /*************************************************************************
+     * Text-only Interactive VN
+     * - all five branches included
+     * - red-branch expanded with 2 sub-branches + secret event unlocked if yellow was visited before red
+     * - typing speed slow (~48ms)
+     * - no images involved
+     *************************************************************************/
+
+    // State
+    const state = {
+      visited: { red:false, green:false, blue:false, purple:false, yellow:false },
+      inConversation:false
+    };
+
+    // DOM
+    const choiceContainer = document.getElementById('choiceContainer');
+    const textEl = document.getElementById('text');
+    const charNameEl = document.getElementById('charName');
+    const flagsEl = document.getElementById('flags');
+    const sceneText = document.getElementById('sceneText');
+
+    // starfield
+    function makeStars(n=120){
+      const sky = document.getElementById('sky');
+      for(let i=0;i<n;i++){
+        const s = document.createElement('div');
+        s.className='star';
+        s.style.left = Math.random()*100+'%';
+        s.style.top = Math.random()*100+'%';
+        const size = (Math.random()*2)+1;
+        s.style.width = s.style.height = size+'px';
+        s.style.opacity = 0.4 + Math.random()*0.8;
+        s.style.animationDuration = (5 + Math.random()*8) + 's';
+        sky.appendChild(s);
+      }
+    }
+    makeStars(140);
+
+    // meteor visual
+    function showMeteor(color='#fff'){
+      const m = document.createElement('div');
+      m.className = 'meteor';
+      m.style.left = (Math.random()*70+15)+'%';
+      m.style.top = (6 + Math.random()*20) + '%';
+      m.style.background = color;
+      m.style.boxShadow = `0 0 18px 8px ${color}`;
+      document.body.appendChild(m);
+      const endY = window.innerHeight * (0.5 + Math.random()*0.25);
+      m.animate([
+        { transform: `translate(-200px, -200px)`, opacity:1 },
+        { transform: `translate(${(Math.random()*400)-200}px, ${endY}px)`, opacity:0 }
+      ], { duration: 1200, easing:'cubic-bezier(.2,.9,.2,1)' });
+      setTimeout(()=>m.remove(), 1400);
+    }
+
+    // Typing effect (slow)
+    let typingTimer = null;
+    const TYPING_SPEED = 48; // ms per char (slower)
+    function typeText(text, opts={name:'나레이터', speed:TYPING_SPEED, cb:null}){
+      if(state.inConversation) return;
+      state.inConversation = true;
+      charNameEl.textContent = opts.name || '나레이터';
+      // scroll box to top
+      const box = document.getElementById('dialogueBox');
+      box.scrollTop = 0;
+      textEl.innerHTML = '';
+      let i=0;
+      const cursor = document.createElement('span'); cursor.className='cursor';
+      function step(){
+        if(i<=text.length){
+          textEl.innerHTML = escapeHtml(text.slice(0,i));
+          if(!textEl.querySelector('.cursor')) textEl.appendChild(cursor);
+          i++;
+          typingTimer = setTimeout(step, opts.speed);
+        } else {
+          cursor.remove();
+          state.inConversation = false;
+          if(typeof opts.cb === 'function') opts.cb();
+        }
+      }
+      step();
+    }
+    function escapeHtml(str){
+      return str.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\n','<br>');
+    }
+
+    // update flags display
+    function updateFlags(){
+      const keys = Object.keys(state.visited).filter(k=>state.visited[k]);
+      flagsEl.textContent = keys.length? keys.join(', ') : '없음';
+    }
+
+    // wrapper to return promise
+    function promiseType(txt, opts={name:'나레이터', speed:TYPING_SPEED}){
+      return new Promise(res=>{
+        typeText(txt, {...opts, cb: ()=> res()});
+      });
+    }
+
+    // present choices in the right panel (replaces the five main choices temporarily)
+    function presentChoices(options=[]){
+      return new Promise((resolve)=>{
+        // disable main choice clicks while presenting custom choices
+        Array.from(document.querySelectorAll('.choiceBtn')).forEach(b=>b.disabled=true);
+        const cont = document.createElement('div');
+        cont.style.display='flex'; cont.style.flexDirection='column'; cont.style.gap='8px';
+        options.forEach(opt=>{
+          const b = document.createElement('button');
+          b.className='choiceBtn';
+          b.textContent = opt.label;
+          b.onclick = ()=> {
+            cont.remove();
+            // restore main choices after short delay
+            setTimeout(()=>Array.from(document.querySelectorAll('.choiceBtn')).forEach(b=>b.disabled=false), 80);
+            resolve(opt.id);
+          };
+          cont.appendChild(b);
+        });
+        // attach to choiceContainer (replace)
+        const container = document.getElementById('choiceContainer');
+        container.appendChild(cont);
+      });
+    }
+
+    // show ending (simple)
+    async function showEnding(title, desc){
+      await promiseType(`--- 엔딩: ${title} ---\n\n${desc}`, {name:'나레이터'});
+      await delay(300);
+    }
+
+    function delay(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+    /* ---------------------- Branches ---------------------- */
+
+    // RED (chiaki) expanded
+    async function redRoute(){
+      showMeteor('#ff6b6b');
+      state.visited.red = true;
+      updateFlags();
+
+      await promiseType('유성의 잔광 속에서 붉은 망토를 휘날리는 남자가 나타난다. 그 자리에 서 있는 건 — 모리사와 치아키.', {name:'나레이터'});
+      await promiseType('치아키: “좋은 타이밍에 소원을 빌었군, 생일 소녀!”', {name:'치아키'});
+      await promiseType('치아키는 반짝이는 별 조각을 희애에게 내민다.', {name:'나레이터'});
+
+      // choice 1
+      const c1 = await presentChoices([
+        {id:'r1', label:'1) 나, 누군가를 지킬 수 있을까?'},
+        {id:'r2', label:'2) 불꽃이라니… 위험하진 않아?'}
+      ]);
+
+      if(c1==='r1'){
+        await promiseType('치아키: “물론이지! 그건 네 안의 ‘용기’가 이미 존재한다는 뜻이야.”', {name:'치아키'});
+        await promiseType('그는 희애의 손을 잡는다. 별조각이 녹아들며 손등에 붉은 문양이 새겨진다.', {name:'나레이터'});
+
+        await promiseType('하늘에서 붉은 빛이 터지고, 불의 정령이 나타난다. “불의 소유자는 약속을 증명하라…”', {name:'나레이터'});
+
+        const c2 = await presentChoices([
+          {id:'r1a', label:'1) 치아키! 같이 싸우자!'},
+          {id:'r1b', label:'2) 난 믿을게. 네가 날 지켜줘!'}
+        ]);
+
+        if(c2==='r1a'){
+          await promiseType('희애: “치아키! 같이 싸우자!”', {name:'희애'});
+          await promiseType('둘의 불빛이 합쳐져 정령을 물리친다. 잔해 속에서 붉은 구슬이 남는다.', {name:'나레이터'});
+          await promiseType('치아키: “이건 널 위한 진짜 선물이야. 너와 나, 그리고 별이 맺은 약속.”', {name:'치아키'});
+          await showEnding('불꽃의 기사단', '희애는 치아키와 함께 별의 기사로 각성했다. 새로운 모험이 시작된다.');
+        } else {
+          await promiseType('희애: “난 믿을게. 네가 날 지켜줘!”', {name:'희애'});
+          await promiseType('치아키: “하하, 네가 이렇게 말해주다니… 책임감이 무겁군.”', {name:'치아키'});
+          await promiseType('치아키가 정령을 물리치고, 희애는 눈물 섞인 웃음을 짓는다.', {name:'나레이터'});
+          await showEnding('별빛의 수호자', '하늘에 새로 뜬 붉은 별이 희애를 비춘다. 치아키는 항상 네 편이다.');
+        }
+      } else { // r2
+        await promiseType('희애: “불꽃이라니… 위험하진 않아?”', {name:'희애'});
+        await promiseType('치아키: “걱정마라. 불꽃은 네 안의 용기를 밝혀줄 뿐. 내가 곁에 있을 테니.”', {name:'치아키'});
+        await promiseType('치아키는 별조각을 머리 위에 얹고 소원을 들어준다—소중한 사람의 평온을 바라는 소원.', {name:'나레이터'});
+        await showEnding('별빛의 수호자', '치아키의 수호 아래, 희애는 평범하지만 따뜻한 생일을 보냈다.');
+      }
+
+      // secret event if yellow visited earlier
+      if(state.visited.yellow){
+        await delay(450);
+        await promiseType('하늘에서 또 다른 노란빛이 폴짝 나타난다…', {name:'나레이터'});
+        await promiseType('단향: “에?! 둘이 뭐야!! 이 분위기 뭐냐고!!”', {name:'단향'});
+        await promiseType('단향은 즉흥 삼행시로 축하를 전한다.', {name:'단향'});
+        await promiseType('치아키: “…이건 인정해야겠다. 꽤 멋졌어.”', {name:'치아키'});
+        await showEnding('두 개의 별이 만나다', '단향과 치아키가 동시에 희애의 생일을 축하하는 비밀 콜라보 엔딩.');
+      }
+    }
+
+    // GREEN
+    async function greenRoute(){
+      showMeteor('#7be495');
+      state.visited.green = true;
+      updateFlags();
+
+      await promiseType('부드러운 초록빛 속에서 위츄(작은 생명체)가 팔짝 튀어나온다.', {name:'나레이터'});
+      await promiseType('위츄: “삐! 생일 축하하라삐!”', {name:'위츄'});
+      await promiseType('그때 하늘에서 리우가 내려온다: “위츄가 먼저 와버렸네? 생일 축하해, 희애.”', {name:'리우'});
+      await promiseType('하지만 위츄는 리우의 선물을 들고 도망간다!', {name:'나레이터'});
+      await showEnding('도망친 선물, 별빛 추격전', '리우와 위츄의 귀여운 추격전이 벌어지고, 희애는 웃으며 그 모습을 지켜본다.');
+    }
+
+    // BLUE
+    async function blueRoute(){
+      showMeteor('#6fc3ff');
+      state.visited.blue = true;
+      updateFlags();
+
+      await promiseType('차가운 푸른빛이 번쩍이며, 익숙한 목소리가 들린다.', {name:'나레이터'});
+      await promiseType('미카: “오잉, 생일이라꼬? 그럼 내 노래라도 들어야제~♪”', {name:'미카'});
+      await promiseType('희애는 미카와 함께 별빛 무대 위에서 생일 축하 라이브를 한다.', {name:'나레이터'});
+      await showEnding('별빛 위의 세레나데', '별빛 아래 미카의 노래가 희애의 하루를 빛나게 한다.');
+    }
+
+    // PURPLE
+    async function purpleRoute(){
+      showMeteor('#c08cff');
+      state.visited.purple = true;
+      updateFlags();
+
+      await promiseType('강렬한 보랏빛이 터지며, 웅장한 오르간 선율이 흐른다.', {name:'나레이터'});
+      await promiseType('슈: “오늘의 주제는 ‘탄생의 예술’이다. 예술은 축복과 고통의 교차점이지.”', {name:'슈'});
+      await promiseType('슈의 퍼포먼스로 희애의 생일은 하나의 예술 공연으로 바뀐다.', {name:'나레이터'});
+      await showEnding('예술가의 축복', '예술적인 연출로 기억에 남을 생일이 완성된다.');
+    }
+
+    // YELLOW
+    async function yellowRoute(){
+      showMeteor('#ffe082');
+      state.visited.yellow = true;
+      updateFlags();
+
+      await promiseType('반짝이는 노란 빛 속에서 단향이 폴짝 나타난다.', {name:'나레이터'});
+      await promiseType('단향: “뭐야, 내가 노란색이야? 안녕 희애야~~~~~ 내가 소원을 들어줄게!!!!! 어때!!”', {name:'단향'});
+
+      const c = await presentChoices([
+        {id:'y1', label:'1) 희애 이름으로 삼행시 해줘'},
+        {id:'y2', label:'2) 다른 문장으로 해줘'}
+      ]);
+      if(c==='y1'){
+        await promiseType('단향: “정 — 정희애야”', {name:'단향'});
+        await promiseType('단향: “희 — 희망 가득한 일년 되고”', {name:'단향'});
+        await promiseType('단향: “애 — 애정해”', {name:'단향'});
+        await showEnding('단향이의 삼행시', '단향의 뜨거운(?! ) 애정이 담긴 삼행시에 희애는 웃음을 터뜨린다.');
+      } else {
+        await promiseType('단향: “그렇다면 내가 문장은 좀 그렇고. 이름으로 삼행시는 해줄게~~ 정말갓기 희애야 애정담아 생일축하해~~~~ 재미없어도 걍 참아 ㅎㅎ”', {name:'단향'});
+        await showEnding('단향이의 프리스타일', '단향 특유의 프리스타일 축하로 마음이 따뜻해진다.');
+      }
+    }
+
+    /* ---------------------- Wiring main choices ---------------------- */
+
+    function onMainChoiceClick(e){
+      const ch = e.currentTarget.dataset.choice;
+      if(!ch) return;
+      if(state.inConversation) return;
+      // disable all buttons briefly
+      Array.from(document.querySelectorAll('.choiceBtn')).forEach(b=>b.disabled=true);
+      // small delay for effect
+      setTimeout(()=> {
+        switch(ch){
+          case 'red': redRoute(); break;
+          case 'green': greenRoute(); break;
+          case 'blue': blueRoute(); break;
+          case 'purple': purpleRoute(); break;
+          case 'yellow': yellowRoute(); break;
+        }
+        // re-enable after short delay in each branch
+        setTimeout(()=> Array.from(document.querySelectorAll('.choiceBtn')).forEach(b=>b.disabled=false), 1200);
+      }, 220);
+    }
+
+    document.querySelectorAll('.choiceBtn').forEach(b=>{
+      b.addEventListener('click', onMainChoiceClick);
+    });
+
+    // skip button (fast-forward)
+    document.getElementById('skip').addEventListener('click', ()=>{
+      if(typingTimer) clearTimeout(typingTimer);
+      state.inConversation = false;
+      // reveal whole latest text quickly (no full-tracking here)
+    });
+
+    // restart
+    document.getElementById('restart').addEventListener('click', ()=>{
+      location.reload();
+    });
+
+    // small helper: click scene text to re-show main choices
+    sceneText.addEventListener('click', ()=>{
+      if(!state.inConversation){
+        // nothing to do because buttons persist
+      }
+    });
+
+    // initial narration (slower)
+    (async ()=>{
+      await delay(360);
+      await promiseType('오늘은 희애의 생일.\n밤하늘은 유난히 맑고, 별들이 반짝인다.\n그때——\n하늘을 가르며 유성이 떨어진다.', {name:'나레이터'});
+      await promiseType('"…뭐야, 색이 여러 개야?"\n희애의 눈앞에는 다섯 개의 서로 다른 색의 유성이 동시에 떨어진다.\n그중 하나만이 진짜 ‘소원을 이뤄주는 별’이라는데…', {name:'나레이터'});
+    })();
+
+    // utility
+    function delay(ms){ return new Promise(r=>setTimeout(r, ms)); }
+    function updateFlags(){ const keys = Object.keys(state.visited).filter(k=>state.visited[k]); flagsEl.textContent = keys.length? keys.join(', ') : '없음'; }
+
+  </script>
+</body>
+</html>
+
